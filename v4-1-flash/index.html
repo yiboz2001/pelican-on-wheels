@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>如何把一张纸折成一只骑着自行车的鹈鹕 · Origami Pelican on a Bicycle</title>
+<style>
+  :root{
+    --ink:#3a3229;
+    --ink-soft:#7a6c5b;
+    --paper:#fffdf8;
+    --line:#e4d9c6;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;overflow:hidden;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,"Segoe UI",sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 50% 0%, #fffdf9 0%, #f6efe2 42%, #eae0cd 100%);
+    -webkit-font-smoothing:antialiased;
+  }
+  #c{display:block;position:fixed;inset:0;width:100%;height:100%;touch-action:none;}
+
+  .hud{position:fixed;pointer-events:none;z-index:5;}
+  .hud > *{pointer-events:auto;}
+
+  /* 标题 */
+  #title{top:22px;left:26px;max-width:min(46ch,46vw);}
+  #title h1{
+    margin:0;font-size:19px;font-weight:600;letter-spacing:.4px;line-height:1.45;
+    display:flex;align-items:baseline;gap:10px;
+  }
+  #title h1 em{font-style:normal;color:var(--ink-soft);font-size:12px;letter-spacing:1.6px;
+    text-transform:uppercase;font-weight:500;}
+  #title p{margin:6px 0 0;font-size:12.5px;color:var(--ink-soft);letter-spacing:.3px;}
+
+  /* 说明卡片 */
+  #caption{
+    left:26px;bottom:26px;width:min(360px,42vw);
+    background:linear-gradient(180deg,rgba(255,253,248,.96),rgba(255,251,242,.93));
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px 18px 17px;
+    box-shadow:0 18px 40px -22px rgba(90,74,52,.5), 0 2px 0 rgba(255,255,255,.9) inset;
+    backdrop-filter:blur(6px);
+  }
+  #caption.pop{animation:pop .45s cubic-bezier(.2,.9,.25,1);}
+  @keyframes pop{from{transform:translateY(7px);opacity:.55;}to{transform:none;opacity:1;}}
+  #cap-index{font-size:11px;letter-spacing:2px;color:#b0a08a;font-variant-numeric:tabular-nums;}
+  #cap-title{margin:6px 0 4px;font-size:17px;font-weight:600;letter-spacing:.4px;}
+  #cap-desc{margin:0;font-size:12.5px;line-height:1.72;color:var(--ink-soft);}
+
+  /* 控制条 */
+  #controls{
+    left:50%;transform:translateX(-50%);bottom:26px;
+    display:flex;align-items:center;gap:10px;
+    background:linear-gradient(180deg,rgba(255,253,248,.97),rgba(255,251,242,.94));
+    border:1px solid var(--line);border-radius:999px;padding:8px 12px;
+    box-shadow:0 18px 40px -24px rgba(90,74,52,.55);
+    backdrop-filter:blur(6px);
+  }
+  #controls button{
+    border:0;background:transparent;cursor:pointer;color:var(--ink);
+    font-family:inherit;font-size:13px;width:34px;height:34px;border-radius:50%;
+    display:grid;place-items:center;transition:background .18s,transform .12s;
+  }
+  #controls button:hover{background:#f3ebdc;}
+  #controls button:active{transform:scale(.93);}
+  #play{background:#f0e6d3 !important;}
+  .spd{font-size:11.5px !important;width:auto !important;padding:0 10px;border-radius:999px !important;height:26px !important;color:var(--ink-soft);}
+  .spd.on{background:#3a3229 !important;color:#fff8ec !important;}
+  #ticks{display:flex;gap:5px;align-items:center;margin:0 6px;}
+  .tick{width:8px !important;height:8px !important;border-radius:50% !important;background:#e7dcc8 !important;padding:0 !important;}
+  .tick.on{background:#c9a86a !important;}
+  .tick:hover{transform:scale(1.45) !important;}
+
+  /* 进度条 */
+  #bar{position:fixed;left:0;bottom:0;height:2px;width:100%;background:rgba(0,0,0,.05);z-index:6;}
+  #bar-fill{height:100%;background:#c9a86a;width:0;transition:width .08s linear;}
+
+  /* 提示 */
+  #hint{
+    right:24px;bottom:28px;font-size:12px;color:var(--ink-soft);
+    background:rgba(255,253,248,.9);border:1px solid var(--line);border-radius:999px;
+    padding:8px 14px;cursor:pointer;box-shadow:0 12px 28px -20px rgba(90,74,52,.6);
+    letter-spacing:.3px;
+  }
+  .dbg{
+    position:fixed;right:16px;top:16px;font:11px/1.5 ui-monospace,Menlo,monospace;
+    color:#7a6c5b;background:rgba(255,255,255,.82);border:1px solid var(--line);
+    border-radius:8px;padding:6px 10px;z-index:9;
+  }
+  #boot{
+    position:fixed;inset:0;display:grid;place-items:center;background:transparent;z-index:20;
+    font-size:13px;color:var(--ink-soft);letter-spacing:1px;transition:opacity .6s;
+  }
+  #boot.hide{opacity:0;pointer-events:none;}
+  @media (max-width:720px){
+    #title{left:16px;top:14px;max-width:70vw;}
+    #title h1{font-size:15px;}
+    #caption{left:12px;right:12px;bottom:92px;width:auto;}
+    #controls{bottom:16px;gap:6px;padding:6px 8px;}
+    #hint{display:none;}
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="title" class="hud">
+  <h1>把一张纸折成一只骑着自行车的鹈鹕 <em>origami</em></h1>
+  <p>一步一步 · 全纸结构 · 拖动旋转 / 滚轮缩放</p>
+</div>
+
+<div id="caption" class="hud">
+  <div id="cap-index">1 / 15</div>
+  <h2 id="cap-title">一张正方形纸</h2>
+  <p id="cap-desc">准备开始。</p>
+</div>
+
+<div id="controls" class="hud">
+  <button id="prev" title="上一步">⤺</button>
+  <button id="play" title="播放 / 暂停">❚❚</button>
+  <button id="next" title="下一步">⤻</button>
+  <button id="replay" title="重播">↻</button>
+  <span id="ticks"></span>
+  <button class="spd" data-s="0.5">0.5×</button>
+  <button class="spd on" data-s="1">1×</button>
+  <button class="spd" data-s="2">2×</button>
+</div>
+
+<div id="hint" class="hud">拖动看侧面 · 滚轮缩放 · 点圆点跳步骤</div>
+<div id="bar"><div id="bar-fill"></div></div>
+<div id="boot">折纸中…</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js"
+  }
+}
+</script>
+<script>
+  if (location.protocol === 'file:') {
+    document.getElementById('boot').innerHTML =
+      '请用本地服务器打开：<br><code>cd pelican-origami && python3 -m http.server 8000</code><br>然后访问 http://localhost:8000';
+  }
+</script>
+<script type="module" src="./src/main.js"></script>
+<script>
+  window.addEventListener('error', (e) => {
+    const b = document.getElementById('boot');
+    if (b && !b.classList.contains('hide')) b.innerHTML = '出错了：' + e.message;
+  });
+</script>
+</body>
+</html>
